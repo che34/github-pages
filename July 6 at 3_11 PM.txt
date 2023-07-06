@@ -1,0 +1,906 @@
+///$tab Begin Script Load
+///******************************************************************************//
+REM #### System Variables ##########;
+Let reload_start = now(1);
+SET ThousandSep=',';
+SET DecimalSep='.';
+SET MoneyThousandSep=',';
+SET MoneyDecimalSep='.';
+SET MoneyFormat='$ #,##0;-$ #,##0';
+SET TimeFormat='hh:mm:ss';
+SET DateFormat='YYYY-MM-DD';
+SET TimestampFormat='YYYY-MM-DD hh:mm:ss';
+SET FirstWeekDay=6; // 6 = Sunday, 0 = Monday
+SET BrokenWeeks=1;
+SET ReferenceDay=0;
+SET FirstMonthOfYear=1;
+SET CollationLocale='en-US';
+SET CreateSearchIndexOnReload=1;
+SET MonthNames='Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec';
+SET LongMonthNames='January;February;March;April;May;June;July;August;September;October;November;December';
+SET DayNames='Mon;Tue;Wed;Thu;Fri;Sat;Sun';
+SET LongDayNames='Monday;Tuesday;Wednesday;Thursday;Friday;Saturday;Sunday';
+SET NumericalAbbreviation='3:k;6:M;9:G;12:T;15:P;18:E;21:Z;24:Y;-3:m;-6:μ;-9:n;-12:p;-15:f;-18:a;-21:z;-24:y';
+
+
+Qualify *;
+Unqualify '_KEY_*';
+
+
+///******************************************************************************//
+// REM #### Search Include/Exclude;
+// REM (Optional) Uncomment & add any id fields that should not be search indexed for faster search in the app -- will improve reload time;
+// // Search Exclude '*ID';
+// REM (Optional) Any fields within the Exclude pattern that you want to include;
+// // Search Include 'TENANT_ID','*USER_ID','*LICENSE_ID';
+
+ 
+///******************************************************************************//
+REM #### Establish Data Connection -- this should remain constant! ####;
+ 
+// LIB CONNECT TO 'Analytics - Shared Data Connections:Snowflake (qlikinternal.us-east-1)';   // for default user role with no PII access
+// LIB CONNECT TO 'Analytics - Dev Data Connections:Snowflake (qlikinternal.us-east-1)';   // for _DEV roles, access to qlik_scratch and qlik_conform
+LIB CONNECT TO 'Analytics - Certified Apps:Snowflake (qlikinternal.us-east-1)';         // for certified apps, CDO Team
+REM Notes: In Analytics - Dev space, PII fields coming through masked when no SQL role is specified.
+    In Analytics - Test, Analytics - Stage, and Analytics - Certified Apps spaces, you cannot
+    employ "SQL USE ROLE...". The data connections will fetch PII data without intervention.
+    Be sure to use Section Access where needed!;
+
+   
+///******************************************************************************//
+REM This vDatabase can be changed to QLIK_SCRATCH during dev work. Default is QLIK_ANALYTICS;
+let vDatabase='QLIK_ANALYTICS';
+//let vDatabase='QLIK_SCRATCH'; // uncomment this for publishing app to Analytics - Data Validation space
+REM vSchemaPrefix will be blank ('') unless you are pulling from a specific branch in QLIK_SCRATCH. (Uncommon);
+let vSchemaPrefix='';
+//let vSchemaPrefix='CHE_';
+
+
+///$tab Customer
+CUSTOMER:
+LOAD
+ 	_KEY_CUSTOMER,
+ 	URI, 
+	ENTITY_ID, 
+	ENTITY_TYPE, 
+	CUSTOMER_NAME, 
+	DUNS_NUMBER, 
+	CUSTOMER_MDM_ID, 
+	SALESFORCE_ID, 
+	SALESFORCE_ICRM_ID, 
+	NETSUITE_ID, 
+	ZUORA_ID, 
+	HAS_MULTIPLE_SALESFORCE_IDS, 
+	HAS_MULTIPLE_SALESFORCE_ICRM_IDS, 
+	HAS_MULTIPLE_NETSUITE_IDS, 
+	HAS_MULTIPLE_ZUORA_IDS, 
+	LEGAL_ENTITY_NAME, 
+	ACCOUNT_SOURCE, 
+	ACCOUNT_OWNER, 
+	ACCOUNT_SITE, 
+	ACCOUNT_RECORD_TYPE, 
+	ACCOUNT_CATEGORY, 
+	ACCOUNT_STATUS, 
+	IS_QLIK_GLOBAL_ULTIMATE, 
+	IS_HIERARCHY_REVIEWED, 
+	PORTFOLIO_ID, 
+	DESCRIPTION, 
+	SITE_TYPE, 
+	PUBLICITY_AGREEMENT, 
+	WEBSITE_URL, 
+	CURRENCY, 
+	DATA_COMMENTS, 
+	IDENTIFIERS, 
+	CREATED_BY, 
+	CREATED_AT, 
+	UPDATED_BY, 
+	UPDATED_AT
+    ;
+SELECT
+	"_KEY_CUSTOMER",
+	"URI",
+	"ENTITY_ID",
+	"ENTITY_TYPE",
+	"CUSTOMER_NAME",
+	"DUNS_NUMBER",
+	"CUSTOMER_MDM_ID",
+	"SALESFORCE_ID",
+	"SALESFORCE_ICRM_ID",
+	"NETSUITE_ID",
+	"ZUORA_ID",
+	"HAS_MULTIPLE_SALESFORCE_IDS",
+	"HAS_MULTIPLE_SALESFORCE_ICRM_IDS",
+	"HAS_MULTIPLE_NETSUITE_IDS",
+	"HAS_MULTIPLE_ZUORA_IDS",
+	"LEGAL_ENTITY_NAME",
+	"ACCOUNT_SOURCE",
+	"ACCOUNT_OWNER",
+	"ACCOUNT_SITE",
+	"ACCOUNT_RECORD_TYPE",
+	"ACCOUNT_CATEGORY",
+	"ACCOUNT_STATUS",
+	"IS_QLIK_GLOBAL_ULTIMATE",
+	"IS_HIERARCHY_REVIEWED",
+	"PORTFOLIO_ID",
+	"DESCRIPTION",
+	"SITE_TYPE",
+	"PUBLICITY_AGREEMENT",
+	"WEBSITE_URL",
+	"CURRENCY",
+	"DATA_COMMENTS",
+	"IDENTIFIERS",
+	"CREATED_BY",
+	"CREATED_AT",
+	"UPDATED_BY",
+	"UPDATED_AT"
+FROM $(vDatabase)."$(vSchemaPrefix)COMMON"."RELTIO_CUSTOMER";
+
+
+///$tab Customer Hierarchy
+CUSTOMER_HIERARCHY:
+LOAD
+ 	_KEY_CUSTOMER,
+	ENTITY_ID, 
+	CUSTOMER_NAME, 
+	IS_QLIK_GLOBAL_ULTIMATE, 
+	IS_HIERARCHY_REVIEWED, 
+	PARENT_ENTITY_ID, 
+	PARENT_CUSTOMER_NAME, 
+	ROOT_ENTITY_ID, 
+	ROOT_CUSTOMER_NAME, 
+	ROOT_CUSTOMER_MDM_ID, 
+	LEVEL, 
+	ENTITY_ID_PATH, 
+	CUSTOMER_NAME_PATH
+    ;
+SELECT
+	"_KEY_CUSTOMER",
+	"ENTITY_ID",
+	"CUSTOMER_NAME",
+	"IS_QLIK_GLOBAL_ULTIMATE",
+	"IS_HIERARCHY_REVIEWED",
+	"PARENT_ENTITY_ID",
+	"PARENT_CUSTOMER_NAME",
+	"ROOT_ENTITY_ID",
+	"ROOT_CUSTOMER_NAME",
+	"ROOT_CUSTOMER_MDM_ID",
+	"LEVEL",
+	"ENTITY_ID_PATH",
+	"CUSTOMER_NAME_PATH"
+FROM $(vDatabase)."$(vSchemaPrefix)COMMON"."RELTIO_CUSTOMER_HIERARCHY";
+
+///$tab Customer Keys
+//LIB CONNECT TO 'Analytics - Dev Data Connections:Snowflake (qlikinternal.us-east-1)';
+
+CUSTOMER_KEYS:
+LOAD 
+	_KEY_CUSTOMER, 
+	_KEY_ACCOUNT, 
+	_KEY_ACCOUNT_SF_CLASSIC, 
+	_KEY_NETSUITE_CUSTOMER, 
+	_KEY_ZUORA_ACCOUNT, 
+	ENTITY_ID, 
+	CUSTOMER_MDM_ID, 
+	DUNS_NUMBER,
+    RELTIO_IDENTIFIER_ID, 
+	RELTIO_IDENTIFIER_TYPE, 
+	IDENTIFIER_DESCRIPTION
+    ;
+SELECT 
+	"_KEY_CUSTOMER",
+	"_KEY_ACCOUNT",
+	"_KEY_ACCOUNT_SF_CLASSIC",
+	"_KEY_NETSUITE_CUSTOMER",
+	"_KEY_ZUORA_ACCOUNT",
+	"ENTITY_ID",
+	"CUSTOMER_MDM_ID",
+	"DUNS_NUMBER",
+	"RELTIO_IDENTIFIER_ID",
+	"RELTIO_IDENTIFIER_TYPE",
+	"IDENTIFIER_DESCRIPTION"
+FROM $(vDatabase)."$(vSchemaPrefix)COMMON"."RELTIO_CUSTOMER_KEYS";
+//FROM "QLIK_SCRATCH"."CHE_COMMON"."RELTIO_CUSTOMER_KEYS_EXP";
+
+
+
+
+
+///$tab Customer Details
+// LIB CONNECT TO 'Analytics - Dev Data Connections:Snowflake (qlikinternal.us-east-1)';
+
+// CUSTOMER_DETAILS:
+// LOAD 
+// 	_KEY_CUSTOMER, 
+// 	ENTITY_ID, 
+// 	CUSTOMER_NAME, 
+// 	ROOT_ENTITY_ID, 
+// 	ROOT_CUSTOMER_NAME, 
+// 	ROOT_CUSTOMER_MDM_ID, 
+// 	GLOBAL_CUSTOMER_STATUS, 
+// 	CUSTOMER_STATUS, 
+// 	IS_ULTIMATE, 
+// 	CUSTOMER_IS_CLOUD_TENANT_ENTITLED, 
+// 	CUSTOMER_HAS_A_TENANT, 
+// 	CUSTOMER_HAS_SHARED_APP
+//     ;
+// SELECT 
+// 	"_KEY_CUSTOMER",
+// 	"ENTITY_ID",
+// 	"CUSTOMER_NAME",
+// 	"ROOT_ENTITY_ID",
+// 	"ROOT_CUSTOMER_NAME",
+// 	"ROOT_CUSTOMER_MDM_ID",
+// 	"GLOBAL_CUSTOMER_STATUS",
+// 	"CUSTOMER_STATUS",
+// 	"IS_ULTIMATE",
+// 	"CUSTOMER_IS_CLOUD_TENANT_ENTITLED",
+// 	"CUSTOMER_HAS_A_TENANT",
+// 	"CUSTOMER_HAS_SHARED_APP"
+// FROM "QLIK_SCRATCH"."CHE_COMMON"."RELTIO_CUSTOMER_DETAILS";
+
+
+///$tab Account
+ACCOUNT:
+LOAD 
+	_KEY_ACCOUNT, 
+	ID, 
+	NAME,
+	TYPE, 
+	RECORD_TYPE,
+    BILLING_COUNTRY,
+    BILLING_POSTAL_CODE,
+    SHIPPING_COUNTRY,
+   	OWNER_ID,
+    OWNER_NAME,
+    DOMESTIC_PARENT_DUNS_C, 
+	DOMESTIC_PARENT_NAME_C, 
+	GLOBAL_ULTIMATE_DUNS_C, 
+	GLOBAL_ULTIMATE_NAME_C, 
+	IMMEDIATE_PARENT_DUNS_C, 
+	IMMEDIATE_PARENT_NAME_C,
+    NAICS_DESCRIPTION, 
+	NAICS_CODE,
+    GEOGRAPHIC_SEGMENT_C,
+   	REGION_C, 
+	SEGMENT_C, 
+	SALES_SEGMENTATION_C,
+   	NUMBER_OF_EMPLOYEES, 
+	EMPLOYEE_BUCKET,
+	ANNUAL_REVENUE, 
+	ANNUAL_REVENUE_BUCKET,
+    ;
+SELECT 
+	"_KEY_ACCOUNT",
+	"ID",
+	"NAME",
+    "TYPE",
+	"RECORD_TYPE",
+    "BILLING_COUNTRY",
+    "BILLING_POSTAL_CODE",
+	"SHIPPING_COUNTRY",
+	"OWNER_ID",
+    "OWNER_NAME",
+    "DOMESTIC_PARENT_DUNS_C",
+	"DOMESTIC_PARENT_NAME_C",
+	"GLOBAL_ULTIMATE_DUNS_C",
+	"GLOBAL_ULTIMATE_NAME_C",
+	"IMMEDIATE_PARENT_DUNS_C",
+	"IMMEDIATE_PARENT_NAME_C",
+    "NAICS_DESCRIPTION",
+	"NAICS_CODE",
+   	"GEOGRAPHIC_SEGMENT_C",
+	"REGION_C",
+	"SEGMENT_C",
+	"SALES_SEGMENTATION_C",
+	"NUMBER_OF_EMPLOYEES",
+	"EMPLOYEE_BUCKET",
+    "ANNUAL_REVENUE",
+	"ANNUAL_REVENUE_BUCKET"    
+FROM $(vDatabase)."$(vSchemaPrefix)COMMON"."ACCOUNT";
+
+
+ACCOUNT_DETAILS:
+LOAD 
+	_KEY_ACCOUNT, 
+	SUM_OF_OPPS, 
+	SUM_OF_OPPS_WON, 
+	SUM_OF_OPPS_LOST, 
+	SUM_OF_OPPS_CLOSED, 
+	SUM_OF_OPPS_OPEN, 
+	SUM_OF_OPPS_OPEN_Q, 
+    QDI_SPECIALIST,
+	EXECUTIVE_SPONSOR, 
+	CUSTOMER_SUCCESS_MANAGER, 
+	ONBOARDING_SPECIALIST, 
+	SALES_REP, 
+	RENEWALS_SPECIALIST, 
+	CUSTOMER_SUCCESS_ENGINEER, 
+	OEM_SALES_REP, 
+	ACCOUNT_BASED_MARKETER, 
+	PARTNER_ACCOUNT_MANAGER, 
+	TECHNICAL_ACCOUNT_MANAGER, 
+	SOLUTION_ARCHITECT, 
+	SOLUTION_ENGINEER, 
+	STRATEGIC_CLIENT_COHORT_LEADER
+    ;
+SELECT 
+	"_KEY_ACCOUNT",
+	"SUM_OF_OPPS",
+	"SUM_OF_OPPS_WON",
+	"SUM_OF_OPPS_LOST",
+	"SUM_OF_OPPS_CLOSED",
+	"SUM_OF_OPPS_OPEN",
+	"SUM_OF_OPPS_OPEN_Q",
+	"QDI_SPECIALIST",
+	"EXECUTIVE_SPONSOR",
+	"CUSTOMER_SUCCESS_MANAGER",
+	"ONBOARDING_SPECIALIST",
+	"SALES_REP",
+	"RENEWALS_SPECIALIST",
+	"CUSTOMER_SUCCESS_ENGINEER",
+	"OEM_SALES_REP",
+	"ACCOUNT_BASED_MARKETER",
+	"PARTNER_ACCOUNT_MANAGER",
+	"TECHNICAL_ACCOUNT_MANAGER",
+	"SOLUTION_ARCHITECT",
+	"SOLUTION_ENGINEER",
+	"STRATEGIC_CLIENT_COHORT_LEADER"
+FROM $(vDatabase)."$(vSchemaPrefix)COMMON"."ACCOUNT_DETAILS";
+
+
+/*
+	Code to get QDI Specialist in single table. The way Account Details is structured gives unwanted results in
+    the GUI with duplicate records in table when field QDI Specialist is added. Putting that data in separate
+    table fixes this issue.
+    
+    Added code to allow selection of all Accounts without QDI Specialist. Flag 'No QDI Specialist'
+*/
+
+ACCOUNT_QDI_SPECIALIST:
+LOAD Distinct
+	_KEY_ACCOUNT,
+    _KEY_ACCOUNT                   as QDI_DE_SELECTOR,
+    ACCOUNT_DETAILS.QDI_SPECIALIST as QDI_SPECIALIST_AQS
+RESIDENT 
+	ACCOUNT_DETAILS
+WHERE Len(ACCOUNT_DETAILS.QDI_SPECIALIST) > 0
+;
+
+ACCOUNT_NO_QDI_SPECIALIST:
+LOAD Distinct
+	_KEY_ACCOUNT,
+    'No QDI Specialist' as NO_QDI_SPECIALIST
+RESIDENT 
+	ACCOUNT_DETAILS
+WHERE NOT EXISTS(ACCOUNT_QDI_SPECIALIST.QDI_DE_SELECTOR, _KEY_ACCOUNT)
+;
+    
+Drop Field ACCOUNT_QDI_SPECIALIST.QDI_DE_SELECTOR;
+
+
+
+
+///$tab Account Dup. Name
+/*
+	Code to find Accounts with identical names but different Account Id:s. Idea is to clean up if needed
+    or make sure to distinguish between Account Names.
+*/
+
+Unqualify *;
+
+ACCOUNT_DUPLICATE_NAME_TMP:
+LOAD
+	ACCOUNT.NAME                 as NAME_DUP,
+	Count(distinct ACCOUNT.ID)   as NUMBER_OF_ACCOUNTID
+RESIDENT ACCOUNT
+GROUP BY
+	ACCOUNT.NAME
+;
+
+
+ACCOUNT_DUPLICATE_NAME:
+LOAD
+	NAME_DUP            as ACCOUNT.NAME,
+	'Yes'               as FLAG_DUPLICATE_NAME
+RESIDENT 
+    ACCOUNT_DUPLICATE_NAME_TMP
+WHERE
+	NUMBER_OF_ACCOUNTID > 1
+;
+
+Drop Table ACCOUNT_DUPLICATE_NAME_TMP;
+
+
+/*
+	Code to find Ultimate Accounts with identical names but different Entity Id:s. Idea is to clean up if needed
+    or make sure to distinguish between Account Names.
+*/
+
+ULTIMATE_ACCOUNT_DUPLICATE_NAME_TMP:
+LOAD
+	CUSTOMER_HIERARCHY.ROOT_CUSTOMER_NAME                   as ULTIMATE_NAME_DUP,
+	Count(distinct CUSTOMER_HIERARCHY.ROOT_ENTITY_ID)       as NUMBER_OF_ULTIMATE_ID
+RESIDENT CUSTOMER_HIERARCHY
+GROUP BY
+	CUSTOMER_HIERARCHY.ROOT_CUSTOMER_NAME
+;
+
+ULTIMATE_ACCOUNT_DUPLICATE_NAME:
+LOAD
+	ULTIMATE_NAME_DUP   as CUSTOMER_HIERARCHY.ROOT_CUSTOMER_NAME,
+	'Yes'               as FLAG_DUPLICATE_ULTIMATE_NAME
+RESIDENT 
+    ULTIMATE_ACCOUNT_DUPLICATE_NAME_TMP
+WHERE
+	NUMBER_OF_ULTIMATE_ID > 1
+;
+
+Drop Table ULTIMATE_ACCOUNT_DUPLICATE_NAME_TMP;
+
+Qualify *;
+Unqualify '_KEY_*';
+///$tab Account SF Classic
+ACCOUNT_SF_CLASSIC:
+LOAD 
+	_KEY_ACCOUNT_SF_CLASSIC, 
+	ID,  
+	NAME,
+    BILLING_COUNTRY,
+    ACCOUNT_ID_ICRM
+	;
+SELECT 
+	"_KEY_ACCOUNT_SF_CLASSIC",
+	"ID",
+	"NAME",
+    "BILLING_COUNTRY",
+	"ACCOUNT_ID_ICRM"
+FROM $(vDatabase)."$(vSchemaPrefix)COMMON"."ACCOUNT_SF_CLASSIC";
+
+///$tab Netsuite - Dim Customer
+//sql use role cdo_dev;
+/*
+NS_CUSTOMER:
+LOAD
+	Text(CUSTOMER_ID) as _KEY_NETSUITE_CUSTOMER,
+	Text(CUSTOMER_ID) as CUSTOMER_ID, 
+    Text(CUSTOMER_CODE) as _KEY_CUSTOMER_CODE,
+	CUSTOMER_NAME, 
+	SUBSIDIARY_CUSTOMER_REPRESENTS,  
+	CREDIT_HOLD, 
+	CREDIT_LIMIT, 
+	CUSTOMER_PHONE_NUMBER, 
+	CUSTOMER_LEGACY_PHONE_NUMBER, 
+	CUSTOMER_URL, 
+	CUSTOMER_EMAIL, 
+	CUSTOMER_VAT_REGISTRATION_NUMBER, 
+	CUSTOMER_TAX_ID, 
+	CUSTOMER_TAX_ID_TYPE, 
+	CUSTOMER_CODE, 
+	CUSTOMER, 
+	IS_CUSTOMER_ACTIVE, 
+	IS_PO_REQUIRED
+    ;
+SELECT 
+	"CUSTOMER_ID",
+	"CUSTOMER_NAME",
+	"SUBSIDIARY_CUSTOMER_REPRESENTS",
+	"CREDIT_HOLD",
+	"CREDIT_LIMIT",
+	"CUSTOMER_PHONE_NUMBER",
+	"CUSTOMER_LEGACY_PHONE_NUMBER",
+	"CUSTOMER_URL",
+	"CUSTOMER_EMAIL",
+	"CUSTOMER_VAT_REGISTRATION_NUMBER",
+	"CUSTOMER_TAX_ID",
+	"CUSTOMER_TAX_ID_TYPE",
+	"CUSTOMER_CODE",
+	"CUSTOMER",
+	"IS_CUSTOMER_ACTIVE",
+	"IS_PO_REQUIRED"
+FROM $(vDatabase)."$(vSchemaPrefix)FINANCE"."DIM_CUSTOMER";
+*/
+
+DIM_ENTITY:
+LOAD 
+	Text(ENTITY_ID)   as ENTITY_ID, 
+	Text(ENTITY_CODE) as ENTITY_CODE, 
+	ENTITY_NAME 
+	;
+SELECT 
+	"ENTITY_ID",
+	"ENTITY_CODE",
+	"ENTITY_NAME"
+FROM "QLIK_ANALYTICS"."FINANCE"."DIM_ENTITY";
+
+NS_CUSTOMER:
+LOAD
+	DIM_ENTITY.ENTITY_ID      as _KEY_NETSUITE_CUSTOMER,
+    DIM_ENTITY.ENTITY_CODE    as _KEY_CUSTOMER_CODE,
+	DIM_ENTITY.ENTITY_ID      as CUSTOMER_ID, 
+	DIM_ENTITY.ENTITY_NAME    as CUSTOMER_NAME,
+    DIM_ENTITY.ENTITY_CODE    as CUSTOMER_CODE
+RESIDENT DIM_ENTITY WHERE Exists(_KEY_NETSUITE_CUSTOMER, DIM_ENTITY.ENTITY_ID);
+
+DROP TABLE DIM_ENTITY;
+
+///$tab NS Conform Customer
+// Workaround to get load to work temporarily.....
+
+// LIB CONNECT TO 'Analytics - Dev Data Connections:Snowflake (qlikinternal.us-east-1)';
+
+// NS_CUSTOMER:
+// LOAD
+// 	Text(ID) as _KEY_NETSUITE_CUSTOMER,
+// 	Text(ID) as CUSTOMER_ID, 
+//     Text(CUSTOMER_CODE) as _KEY_CUSTOMER_CODE,
+// 	COMPANYNAME as CUSTOMER_NAME, 
+//     CUSTOMER_CODE
+//     ;
+// SELECT 
+// 	"ID",
+// 	"COMPANYNAME",
+//     try_to_number(left("ENTITYTITLE", 6))                                 as CUSTOMER_CODE,
+// 	"ENTITYTITLE"
+// FROM "QLIK_CONFORM"."NETSUITE2_PROD"."CUSTOMER";
+
+///$tab Netsuite - FCT ARR
+[FCT_ARR]:
+LOAD
+	Text(END_USER_ID) as _KEY_NETSUITE_CUSTOMER,
+  	ARR_KEY, 
+	AS_OF_DATE, 
+	ARR_PERIOD, 
+	END_USER_ARR_PERIOD_KEY, 
+	IS_ATR, 
+	OPPORTUNITY_ID, 
+// 	SF_ACCOUNT_ID, 
+	END_USER_ID, 
+// 	RESELLER_ID, 
+// 	PRODUCT_LINE_3_ID, 
+// 	ITEM_ID, 
+// 	ORIGINAL_ITEM_ID, 
+// 	SUBSIDIARY_ID, 
+// 	BILLING_ACCOUNT_ID, 
+// 	SUBSCRIPTION_ID, 
+// 	SUBSCRIPTION_LINE_ID, 
+// 	CHANGE_ORDER_ID, 
+// 	CLASS_ID, 
+// 	TRANSACTION_LINE_ID, 
+// 	BOOKING_DOCUMENT, 
+// 	BOOKING_DOCUMENT_STATUS, 
+// 	BOOKING_DATE, 
+// 	INCLUSION_DATE, 
+// 	START_DATE, 
+// 	END_DATE, 
+// 	TERM_MONTHS, 
+// 	CHANNEL, 
+// 	ATR_DATE, 
+// 	BOOKING_SOURCE, 
+// 	DETAIL_URL, 
+// 	IS_BIFURCATION, 
+// 	IS_RUSSIA, 
+// 	TRANSACTION_CURRENCY_CODE, 
+// 	SUBSIDIARY_CURRENCY_CODE, 
+// 	LOCAL_RATE, 
+// 	ANNUAL_CONTRACT_VALUE_TRANSACTION, 
+// 	ANNUAL_CONTRACT_VALUE_LOCAL, 
+// 	TOTAL_CONTRACT_VALUE_TRANSACTION, 
+// 	TOTAL_CONTRACT_VALUE_LOCAL, 
+// 	ANNUAL_RECURRING_REVENUE_TRANSACTION, 
+// 	ANNUAL_RECURRING_REVENUE_LOCAL, 
+// 	MONTH_END_USD_RATE_TRANSACTION, 
+// 	MONTH_END_USD_RATE_LOCAL, 
+// 	PRIOR_MONTH_END_USD_RATE_TRANSACTION, 
+// 	PRIOR_MONTH_END_USD_RATE_LOCAL, 
+// 	SPOT_CC_USD_RATE_TRANSACTION, 
+// 	SPOT_CC_USD_RATE_LOCAL, 
+// 	PRIOR_YEAR_END_USD_RATE_TRANSACTION, 
+// 	PRIOR_YEAR_END_USD_RATE_LOCAL, 
+// 	ANNUAL_CONTRACT_VALUE_TRNME, 
+// 	ANNUAL_CONTRACT_VALUE_LOCME, 
+// 	ANNUAL_CONTRACT_VALUE_TRNPME, 
+// 	ANNUAL_CONTRACT_VALUE_LOCPME, 
+// 	ANNUAL_CONTRACT_VALUE_TRNSCC, 
+// 	ANNUAL_CONTRACT_VALUE_LOCSCC, 
+// 	ANNUAL_CONTRACT_VALUE_TRNPYE, 
+// 	ANNUAL_CONTRACT_VALUE_LOCPYE, 
+// 	TOTAL_CONTRACT_VALUE_TRNME, 
+// 	TOTAL_CONTRACT_VALUE_LOCME, 
+// 	TOTAL_CONTRACT_VALUE_TRNPME, 
+// 	TOTAL_CONTRACT_VALUE_LOCPME, 
+// 	TOTAL_CONTRACT_VALUE_TRNSCC, 
+// 	TOTAL_CONTRACT_VALUE_LOCSCC, 
+// 	TOTAL_CONTRACT_VALUE_TRNPYE, 
+// 	TOTAL_CONTRACT_VALUE_LOCPYE, 
+	ANNUAL_RECURRING_REVENUE_TRNME, 
+	ANNUAL_RECURRING_REVENUE_LOCME, 
+	ANNUAL_RECURRING_REVENUE_TRNPME, 
+	ANNUAL_RECURRING_REVENUE_LOCPME, 
+	ANNUAL_RECURRING_REVENUE_TRNSCC, 
+	ANNUAL_RECURRING_REVENUE_LOCSCC, 
+	ANNUAL_RECURRING_REVENUE_TRNPYE, 
+	ANNUAL_RECURRING_REVENUE_LOCPYE
+    ;
+SELECT 
+	"ARR_KEY",
+	"AS_OF_DATE",
+	"ARR_PERIOD",
+	"END_USER_ARR_PERIOD_KEY",
+	"IS_ATR",
+	"OPPORTUNITY_ID",
+// 	"SF_ACCOUNT_ID",
+	"END_USER_ID",
+// 	"RESELLER_ID",
+// 	"PRODUCT_LINE_3_ID",
+// 	"ITEM_ID",
+// 	"ORIGINAL_ITEM_ID",
+// 	"SUBSIDIARY_ID",
+// 	"BILLING_ACCOUNT_ID",
+// 	"SUBSCRIPTION_ID",
+// 	"SUBSCRIPTION_LINE_ID",
+// 	"CHANGE_ORDER_ID",
+// 	"CLASS_ID",
+// 	"TRANSACTION_LINE_ID",
+// 	"BOOKING_DOCUMENT",
+// 	"BOOKING_DOCUMENT_STATUS",
+// 	"BOOKING_DATE",
+// 	"INCLUSION_DATE",
+// 	"START_DATE",
+// 	"END_DATE",
+// 	"TERM_MONTHS",
+// 	"CHANNEL",
+// 	"ATR_DATE",
+// 	"BOOKING_SOURCE",
+// 	"DETAIL_URL",
+// 	"IS_BIFURCATION",
+// 	"IS_RUSSIA",
+// 	"TRANSACTION_CURRENCY_CODE",
+// 	"SUBSIDIARY_CURRENCY_CODE",
+// 	"LOCAL_RATE",
+// 	"ANNUAL_CONTRACT_VALUE_TRANSACTION",
+// 	"ANNUAL_CONTRACT_VALUE_LOCAL",
+// 	"TOTAL_CONTRACT_VALUE_TRANSACTION",
+// 	"TOTAL_CONTRACT_VALUE_LOCAL",
+// 	"ANNUAL_RECURRING_REVENUE_TRANSACTION",
+// 	"ANNUAL_RECURRING_REVENUE_LOCAL",
+// 	"MONTH_END_USD_RATE_TRANSACTION",
+// 	"MONTH_END_USD_RATE_LOCAL",
+// 	"PRIOR_MONTH_END_USD_RATE_TRANSACTION",
+// 	"PRIOR_MONTH_END_USD_RATE_LOCAL",
+// 	"SPOT_CC_USD_RATE_TRANSACTION",
+// 	"SPOT_CC_USD_RATE_LOCAL",
+// 	"PRIOR_YEAR_END_USD_RATE_TRANSACTION",
+// 	"PRIOR_YEAR_END_USD_RATE_LOCAL",
+// 	"ANNUAL_CONTRACT_VALUE_TRNME",
+// 	"ANNUAL_CONTRACT_VALUE_LOCME",
+// 	"ANNUAL_CONTRACT_VALUE_TRNPME",
+// 	"ANNUAL_CONTRACT_VALUE_LOCPME",
+// 	"ANNUAL_CONTRACT_VALUE_TRNSCC",
+// 	"ANNUAL_CONTRACT_VALUE_LOCSCC",
+// 	"ANNUAL_CONTRACT_VALUE_TRNPYE",
+// 	"ANNUAL_CONTRACT_VALUE_LOCPYE",
+// 	"TOTAL_CONTRACT_VALUE_TRNME",
+// 	"TOTAL_CONTRACT_VALUE_LOCME",
+// 	"TOTAL_CONTRACT_VALUE_TRNPME",
+// 	"TOTAL_CONTRACT_VALUE_LOCPME",
+// 	"TOTAL_CONTRACT_VALUE_TRNSCC",
+// 	"TOTAL_CONTRACT_VALUE_LOCSCC",
+// 	"TOTAL_CONTRACT_VALUE_TRNPYE",
+// 	"TOTAL_CONTRACT_VALUE_LOCPYE",
+	"ANNUAL_RECURRING_REVENUE_TRNME",
+	"ANNUAL_RECURRING_REVENUE_LOCME",
+	"ANNUAL_RECURRING_REVENUE_TRNPME",
+	"ANNUAL_RECURRING_REVENUE_LOCPME",
+	"ANNUAL_RECURRING_REVENUE_TRNSCC",
+	"ANNUAL_RECURRING_REVENUE_LOCSCC",
+	"ANNUAL_RECURRING_REVENUE_TRNPYE",
+	"ANNUAL_RECURRING_REVENUE_LOCPYE"
+FROM $(vDatabase)."$(vSchemaPrefix)FINANCE"."FCT_ARR";
+
+
+
+///$tab ARR
+/*
+	ARR piece from Customer 360. See if we can tie it to new Customer data model
+*/
+
+Let vCurrencySelect = 'BUDGETUSD';
+let vARRCurrency = 'ME';
+Let vContractType = 'TCV';
+
+Unqualify *;
+
+ARR_temp:
+Load *
+FROM [lib://Analytics - Legacy QVDs:DataFiles/Analytics_ARR - Customer Success.qvd]
+(qvd);
+
+Concatenate (ARR_temp)
+LOAD
+    "End User",
+    ERP,
+//    "Bookings Group 3",
+//    "End User Name",
+//    "Product Line 4",
+//    Country,
+//    "Account Industry",
+//    "Account Sector",
+    Period,
+    "ARR ME"					as ARR_ME,
+    'No'						as "Is ATR"
+FROM [lib://Customer 360 - LEGACY:DataFiles/Q42020Extract.xlsx]
+(ooxml, embedded labels, table is Extract);
+
+ARR:
+Load
+	*,
+    // Key to Netsuite Customer Code in Netsuite Customer table
+    Text(ERP)																		as _KEY_CUSTOMER_CODE,
+    Period																			as [ARR Period],
+    "Period Year"																	as [ARR Period Year],
+    "Period Month"																	as [ARR Period Month],
+    monthend(date(Period))															as [As Of Date],
+    "Product Line 3"																as %ARR_Product_Line3,
+    Trim(Text(%ItemID))															    as %ARR_Item_Key,
+    "Last Reloaded"																	as [ARR Last Reloaded]
+Resident
+	ARR_temp
+;
+
+Drop Table ARR_temp;
+
+ARR_Items:
+Load
+	%ItemID																			as %ARR_Item_Key,
+    "Bookings Group 1"																as [ARR Bookings Group 1],
+    "Bookings Group 2"																as [ARR Bookings Group 2],
+    "Bookings Group 3"																as [ARR Bookings Group 3],
+    "Is AMP"																		as [ARR Is AMP]
+FROM [lib://Analytics - Legacy QVDs:DataFiles/Analytics_Items.qvd]
+(qvd);
+
+//Left Join (ARR)
+ARR_Products:
+LOAD
+	"Product Line 3"																as %ARR_Product_Line3,
+    "Product Line 1"																as [ARR Product Line 1],
+    "Product Line 2"																as [ARR Product Line 2],
+    "Product Line 3"																as [ARR Product Line 3]   
+FROM [lib://Analytics - Legacy QVDs:DataFiles/Analytics_Product Lines.qvd]
+(qvd);
+
+Qualify *;
+Unqualify '_KEY_*';
+///$tab Totango Hierarchy
+/*
+	Code to flatten the hierarchy into two levels for Totango. Ultimate/Root Customer level 1 - Parent and 
+    rest on level 2 - Child
+*/
+
+Unqualify *;
+
+TOTANGO_HIERARCHY:
+LOAD 
+    CUSTOMER_HIERARCHY.CUSTOMER_NAME	as PARENT_CUSTOMER_NAME,
+    CUSTOMER_HIERARCHY.ENTITY_ID		as PARENT_ENTITY_ID
+RESIDENT 
+	CUSTOMER_HIERARCHY
+WHERE 
+	CUSTOMER_HIERARCHY.LEVEL = 1
+;
+
+LEFT JOIN (TOTANGO_HIERARCHY)
+LOAD
+	CUSTOMER.ENTITY_ID					as PARENT_ENTITY_ID,
+    CUSTOMER.CUSTOMER_MDM_ID			as PARENT_CUSTOMER_MDM_ID
+RESIDENT 
+	CUSTOMER
+;  
+
+LEFT JOIN (TOTANGO_HIERARCHY)
+LOAD
+ 	CUSTOMER_HIERARCHY.ROOT_ENTITY_ID	as PARENT_ENTITY_ID,
+	CUSTOMER_HIERARCHY.CUSTOMER_NAME	as CHILD_CUSTOMER_NAME,
+    CUSTOMER_HIERARCHY.ENTITY_ID		as CHILD_ENTITY_ID
+RESIDENT 
+	CUSTOMER_HIERARCHY
+WHERE NOT EXISTS(PARENT_ENTITY_ID, CUSTOMER_HIERARCHY.ENTITY_ID)
+;
+
+LEFT JOIN (TOTANGO_HIERARCHY)
+LOAD
+	CUSTOMER.ENTITY_ID					as CHILD_ENTITY_ID,
+    CUSTOMER.CUSTOMER_MDM_ID			as CHILD_CUSTOMER_MDM_ID
+RESIDENT 
+	CUSTOMER
+;  
+
+
+Qualify *;
+Unqualify '_KEY_*';
+
+
+
+///$tab Customer not in Hierarchy
+// Resident load to find all Customers not present in Customer_Hierarchy
+
+NOT_IN_HIERARCHY:
+LOAD Distinct
+	_KEY_CUSTOMER,
+    CUSTOMER.ENTITY_ID 		AS ENTITY_ID,
+    CUSTOMER.CUSTOMER_NAME 	AS CUSTOMER_NAME,
+    'NOT IN HIERARCHY'		AS TYPE
+RESIDENT CUSTOMER WHERE NOT Exists(CUSTOMER_HIERARCHY.ENTITY_ID, CUSTOMER.ENTITY_ID)
+;    
+    
+
+///$tab Customers with funky relation
+/*
+	Code to find other issues causing hierarchy not to build properly. Some entities
+    seem to have more than one parent?? Showing up more than once in hierarchy build up.
+    Eventually we should be able to remove this code.
+*/
+
+Unqualify '*';
+
+INT_RELTIO_CUSTOMER_HIERARCHY_PREPARE_TMP:
+LOAD 
+	ENTITY_ID, 
+	CUSTOMER_NAME, 
+	IS_QLIK_GLOBAL_ULTIMATE, 
+	IS_HIERARCHY_REVIEWED, 
+	PARENT_ENTITY_ID;
+SELECT 
+	"ENTITY_ID",
+	"CUSTOMER_NAME",
+	"IS_QLIK_GLOBAL_ULTIMATE",
+	"IS_HIERARCHY_REVIEWED",
+	"PARENT_ENTITY_ID"
+FROM $(vDatabase)."$(vSchemaPrefix)COMMON"."INT_RELTIO_CUSTOMER_HIERARCHY_PREPARE";
+
+
+INT_RELTIO_CUSTOMER_HIERARCHY_PREPARE_TMP1:
+LOAD 
+	ENTITY_ID, 
+//	PARENT_ENTITY_ID,
+    COUNT(ENTITY_ID) AS NUMBER_ENTITIES
+RESIDENT
+	INT_RELTIO_CUSTOMER_HIERARCHY_PREPARE_TMP
+GROUP BY 
+	ENTITY_ID, 
+//	PARENT_ENTITY_ID
+;
+
+DROP TABLE INT_RELTIO_CUSTOMER_HIERARCHY_PREPARE_TMP;
+
+Qualify *;
+Unqualify '_KEY_*';
+
+INT_PREPARE_ISSUES:
+LOAD
+	ENTITY_ID AS _KEY_CUSTOMER,
+	ENTITY_ID, 
+// 	PARENT_ENTITY_ID,
+    NUMBER_ENTITIES
+RESIDENT
+	INT_RELTIO_CUSTOMER_HIERARCHY_PREPARE_TMP1
+WHERE 
+	NUMBER_ENTITIES > 1
+;
+
+DROP TABLE INT_RELTIO_CUSTOMER_HIERARCHY_PREPARE_TMP1;
+
+
+///$tab End Script Load
+///******************************************************************************//
+   
+REM (Optional) Optional stuff here like reload time duration, etc;
+Let reload_end = now(1);
+Let reload_duration_seconds = (reload_end - reload_start)*86400;
+TRACE Reloaded ended after $(reload_duration_seconds) seconds.;
+  
+REM Uncomment this if you qualified fields earlier;
+// Unqualify *;
+   
+REM Uncomment this you are mapping field names;
+// Rename Fields using map_field;
